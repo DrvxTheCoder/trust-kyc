@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TrustKYC — Hassle-free customer onboarding</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=3" />
+<style>
+  /* patch page padding for non-hero pages */
+  .page-padded .page-inner { padding: 22px 28px; }
+  .page-padded.density-compact .page-inner { padding: 16px 22px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script src="data.js"></script>
+<script type="text/babel" src="ui.jsx"></script>
+<script type="text/babel" src="dashboard.jsx"></script>
+<script type="text/babel" src="profile.jsx"></script>
+<script type="text/babel" src="pages.jsx"></script>
+<script type="text/babel" src="admin.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect } = React;
+
+const TWEAKS_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accent": "blue",
+  "density": "compact",
+  "theme": "light",
+  "startScreen": "dashboard"
+}/*EDITMODE-END*/;
+
+const ACCENTS = {
+  blue:   { primary: '#2563EB', alt: '#3B82F6' },
+  teal:   { primary: '#0D9488', alt: '#14B8A6' },
+  violet: { primary: '#7C3AED', alt: '#8B5CF6' },
+  amber:  { primary: '#D97706', alt: '#F59E0B' },
+};
+
+// Sun icon
+const SunIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+  </svg>
+);
+const MoonIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+);
+
+function App() {
+  const [route, setRoute] = useState(() => localStorage.getItem('tk_route') || TWEAKS_DEFAULTS.startScreen);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [tweaks, setTweaks] = useState(TWEAKS_DEFAULTS);
+  const [tweaksOpen, setTweaksOpen] = useState(false);
+  const [appState, setAppState] = useState({
+    customers: window.TK_DATA.customers.map(c => ({ ...c })),
+    documents: window.TK_DATA.documents.map(d => ({ ...d })),
+  });
+
+  useEffect(() => { localStorage.setItem('tk_route', route); }, [route]);
+
+  // Apply theme class to html element
+  useEffect(() => {
+    document.documentElement.classList.toggle('light', tweaks.theme === 'light');
+    document.body.style.background = tweaks.theme === 'light' ? '#EEF2F8' : '#0B1120';
+  }, [tweaks.theme]);
+
+  // Apply accent CSS vars
+  useEffect(() => {
+    const a = ACCENTS[tweaks.accent] || ACCENTS.blue;
+    document.documentElement.style.setProperty('--blue', a.primary);
+    document.documentElement.style.setProperty('--blue-2', a.alt);
+  }, [tweaks.accent]);
+
+  // Tweaks protocol
+  useEffect(() => {
+    const handler = (e) => {
+      if (!e.data) return;
+      if (e.data.type === '__activate_edit_mode') setTweaksOpen(true);
+      if (e.data.type === '__deactivate_edit_mode') setTweaksOpen(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const setTweak = (key, val) => {
+    const next = { ...tweaks, [key]: val };
+    setTweaks(next);
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [key]: val } }, '*');
+  };
+
+  const toggleTheme = () => setTweak('theme', tweaks.theme === 'dark' ? 'light' : 'dark');
+
+  const openCustomer = (c) => { setSelectedCustomer(c); setRoute('profile'); };
+  const openCustomerById = (id) => { const c = appState.customers.find(x => x.id === id); if (c) openCustomer(c); };
+  const nav = (r) => { setSelectedCustomer(null); setRoute(r); };
+
+  const titleMap = {
+    dashboard: 'Dashboard', customers: 'Customers', pipeline: 'Pipeline',
+    documents: 'Documents', activity: 'Activity Log', workflows: 'Workflows',
+    team: 'Team', settings: 'Settings', profile: 'Customer Profile'
+  };
+
+  const crumbsFor = (r) => {
+    if (r === 'profile' && selectedCustomer) return ['Customers', selectedCustomer.name];
+    return [titleMap[r] || r];
+  };
+
+  const themeToggle = (
+    <button className="theme-btn" onClick={toggleTheme} title="Toggle light/dark">
+      {tweaks.theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+      {tweaks.theme === 'dark' ? 'Light' : 'Dark'}
+    </button>
+  );
+
+  let pageContent;
+  if (route === 'profile' && selectedCustomer) {
+    pageContent = <CustomerProfile customer={selectedCustomer} appState={appState} onBack={() => nav('pipeline')} />;
+  } else if (route === 'dashboard') {
+    pageContent = <Dashboard appState={appState} setAppState={setAppState} onOpen={openCustomer} onNav={nav} />;
+  } else if (route === 'pipeline') {
+    pageContent = <PipelinePage appState={appState} setAppState={setAppState} onOpen={openCustomer} />;
+  } else if (route === 'customers') {
+    pageContent = <div className="page"><div className="page-inner"><CustomersList appState={appState} onOpen={openCustomer} /></div></div>;
+  } else if (route === 'documents') {
+    pageContent = <div className="page"><div className="page-inner"><DocumentsPage appState={appState} onOpenCustomer={openCustomerById} /></div></div>;
+  } else if (route === 'activity') {
+    pageContent = <div className="page"><div className="page-inner"><ActivityLog /></div></div>;
+  } else if (route === 'workflows') {
+    pageContent = <div className="page"><div className="page-inner"><WorkflowBuilder /></div></div>;
+  } else if (route === 'team') {
+    pageContent = <div className="page"><div className="page-inner"><TeamPage /></div></div>;
+  } else {
+    pageContent = (
+      <div className="page"><div className="page-inner">
+        <div className="card card-lg" style={{ textAlign: 'center', padding: '60px 20px', marginTop: 22 }}>
+          <div style={{ fontSize: 14, color: 'var(--text-dim)' }}>{titleMap[route]} — coming soon.</div>
+        </div>
+      </div></div>
+    );
+  }
+
+  return (
+    <div className={'app density-' + tweaks.density}>
+      <Sidebar current={route} onNav={nav} />
+      <div className="main">
+        <Topbar
+          title={titleMap[route]}
+          crumbs={crumbsFor(route)}
+          right={themeToggle}
+        />
+        {pageContent}
+      </div>
+
+      {tweaksOpen && (
+        <div className="tweaks">
+          <div className="tweaks-head">
+            <div className="tweaks-title">Tweaks</div>
+            <button className="tweaks-close" onClick={() => {
+              setTweaksOpen(false);
+              window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+            }}>✕</button>
+          </div>
+
+          <div className="tweak">
+            <div className="tweak-label">Theme</div>
+            <div className="seg">
+              <button className={'seg-btn' + (tweaks.theme === 'dark' ? ' is-active' : '')} onClick={() => setTweak('theme', 'dark')}>Dark</button>
+              <button className={'seg-btn' + (tweaks.theme === 'light' ? ' is-active' : '')} onClick={() => setTweak('theme', 'light')}>Light</button>
+            </div>
+          </div>
+
+          <div className="tweak">
+            <div className="tweak-label">Accent color</div>
+            <div className="swatches">
+              {Object.entries(ACCENTS).map(([k, v]) => (
+                <button key={k} className={'swatch' + (tweaks.accent === k ? ' is-active' : '')}
+                  style={{ background: v.primary }} onClick={() => setTweak('accent', k)} title={k} />
+              ))}
+            </div>
+          </div>
+
+          <div className="tweak">
+            <div className="tweak-label">Density</div>
+            <div className="seg">
+              <button className={'seg-btn' + (tweaks.density === 'comfortable' ? ' is-active' : '')} onClick={() => setTweak('density', 'comfortable')}>Comfortable</button>
+              <button className={'seg-btn' + (tweaks.density === 'compact' ? ' is-active' : '')} onClick={() => setTweak('density', 'compact')}>Compact</button>
+            </div>
+          </div>
+
+          <div className="tweak">
+            <div className="tweak-label">Start screen</div>
+            <div className="seg">
+              <button className={'seg-btn' + (tweaks.startScreen === 'dashboard' ? ' is-active' : '')} onClick={() => setTweak('startScreen', 'dashboard')}>Dashboard</button>
+              <button className={'seg-btn' + (tweaks.startScreen === 'pipeline' ? ' is-active' : '')} onClick={() => setTweak('startScreen', 'pipeline')}>Pipeline</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---- Customers list ---- */
+function CustomersList({ appState, onOpen }) {
+  return (
+    <>
+      <div className="page-head">
+        <div>
+          <h1 className="page-title">Customers</h1>
+          <div className="page-sub">{appState.customers.length} in active onboarding · 1,714 approved</div>
+        </div>
+        <div className="page-actions">
+          <Button variant="ghost" size="sm" icon={Icons.download}>Export</Button>
+          <Button variant="primary" size="sm" icon={Icons.plus}>New customer</Button>
+        </div>
+      </div>
+      <div className="card card-lg" style={{ padding: 0, overflow: 'hidden' }}>
+        <table className="table">
+          <thead><tr><th>Customer</th><th>Account type</th><th>Risk</th><th>Stage</th><th>Docs</th><th>Days</th><th>Created</th></tr></thead>
+          <tbody>
+            {appState.customers.map(c => (
+              <tr key={c.id} onClick={() => onOpen(c)}>
+                <td>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #2563EB, #8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 11, flexShrink: 0 }}>{c.initials}</div>
+                    <div>
+                      <div className="t-strong">{c.name}</div>
+                      <div className="t-id" style={{ fontFamily: 'var(--ui)' }}>{c.company || c.email}</div>
+                    </div>
+                  </div>
+                </td>
+                <td><TypeBadge type={c.type} /></td>
+                <td><RiskBadge risk={c.risk} /></td>
+                <td><Badge tone="slate">{c.stage}</Badge></td>
+                <td className="mono">{c.docs}/{c.docsTotal}</td>
+                <td className={'mono ' + (c.stuck ? 'faint' : 'dim')}>{c.daysInStage}d{c.stuck && ' ⚠'}</td>
+                <td className="mono dim">{fmtDate(c.created)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

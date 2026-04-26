@@ -1,0 +1,412 @@
+"use client"
+
+import { useMemo, useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { TkBadge } from "@/components/ui/tk-badge"
+import { Sparkline } from "@/components/kyc/sparkline"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
+import { customers as allCustomers, documents as allDocuments, activity, team } from "@/lib/data"
+import {
+  IconUsers, IconColumns, IconCheck, IconAlertTriangle,
+  IconActivity, IconPlus, IconCalendar, IconFlag,
+} from "@tabler/icons-react"
+
+// ---- Hero KPI Card ----
+function HeroKPI({
+  icon: Icon,
+  label,
+  value,
+  trend,
+  spark,
+}: {
+  icon: React.ElementType
+  label: string
+  value: string | number
+  trend: string
+  spark?: number[]
+}) {
+  return (
+    <div className="flex items-center gap-3 bg-white/10 dark:bg-white/5 rounded-xl px-4 py-3 border border-white/20 flex-1 min-w-[180px]">
+      <div className="size-9 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
+        <Icon size={18} className="text-white" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-xs text-white font-medium">{label}</div>
+        <div className="text-2xl font-bold text-white leading-none mt-0.5">{value}</div>
+        <div className="text-xs text-blue-100/70 mt-0.5">{trend}</div>
+      </div>
+      {spark && (
+        <div className="opacity-70 shrink-0">
+          <Sparkline points={spark} color="rgba(255,255,255,0.8)" width={60} height={28} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---- Throughput bar chart ----
+const throughputData = [
+  { m: "Oct", v: 41 }, { m: "Nov", v: 55 }, { m: "Dec", v: 38 },
+  { m: "Jan", v: 62 }, { m: "Feb", v: 70 }, { m: "Mar", v: 85 }, { m: "Apr", v: 48 },
+]
+
+function ThroughputChart() {
+  const max = Math.max(...throughputData.map((d) => d.v))
+  const [hovered, setHovered] = useState<number | null>(null)
+
+  return (
+    <div>
+      <div className="flex items-end gap-1.5 h-36">
+        {throughputData.map((x, i) => {
+          const isCurrent = i === throughputData.length - 1
+          const isHov = hovered === i
+          return (
+            <div
+              key={i}
+              className="flex-1 flex flex-col items-center gap-1 cursor-default"
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered(null)}
+            >
+              {isHov && (
+                <div className="bg-popover border rounded-md px-2 py-0.5 text-xs font-mono font-bold whitespace-nowrap shadow-sm mb-1">
+                  {x.v} accounts
+                </div>
+              )}
+              <div
+                className="w-full rounded-t-md transition-all"
+                style={{
+                  height: `${(x.v / max) * 110}px`,
+                  background: isCurrent
+                    ? "linear-gradient(180deg,#60a5fa,#2563EB)"
+                    : isHov
+                    ? "rgba(59,130,246,0.5)"
+                    : "rgba(59,130,246,0.2)",
+                  boxShadow: isCurrent ? "0 4px 16px -4px rgba(37,99,235,0.4)" : "none",
+                }}
+              />
+              <div className="text-[10px] text-muted-foreground font-medium">{x.m}</div>
+            </div>
+          )
+        })}
+      </div>
+      <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+        <span>Oct 2025 — Apr 2026</span>
+        <span className="font-mono font-bold text-emerald-500">↑ 16.8% avg growth</span>
+      </div>
+    </div>
+  )
+}
+
+// ---- Completion donut ----
+const pieData = [
+  { name: "Approved on time", value: 62, color: "#10B981" },
+  { name: "Approved (delayed)", value: 18, color: "#F59E0B" },
+  { name: "In progress", value: 14, color: "#3B82F6" },
+  { name: "Stuck / escalated", value: 6, color: "#EF4444" },
+]
+
+function CompletionPanel() {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-4">
+        <div className="relative size-36 shrink-0">
+          <ChartContainer config={{}} className="size-36">
+            <PieChart>
+              <Pie data={pieData} cx="50%" cy="50%" innerRadius={46} outerRadius={65} dataKey="value" strokeWidth={0}>
+                {pieData.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} />
+                ))}
+              </Pie>
+            </PieChart>
+          </ChartContainer>
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <span className="text-2xl font-bold">62%</span>
+            <span className="text-xs text-muted-foreground">on time</span>
+          </div>
+        </div>
+        <div className="flex-1 flex flex-col gap-2">
+          {pieData.map((b) => (
+            <div key={b.name} className="flex flex-col gap-1">
+              <div className="flex justify-between text-xs font-semibold">
+                <span className="text-muted-foreground">{b.name}</span>
+                <span className="font-mono" style={{ color: b.color }}>{b.value}%</span>
+              </div>
+              <div className="h-1 rounded-full bg-muted overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: `${b.value}%`, background: b.color, opacity: 0.85 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+        <span>↑</span>
+        <span><strong>+4.1%</strong> completion rate vs last month</span>
+      </div>
+    </div>
+  )
+}
+
+// ---- Alerts list ----
+const alertItems = [
+  { tone: "red" as const, title: "Passeport expired — Ousmane Ndiaye", sub: "Enhanced Due Diligence · 9 days stuck", time: "14m ago" },
+  { tone: "red" as const, title: "NINEA expired — Awa Gueye", sub: "Stuck in Compliance Review · 8 days", time: "2h ago" },
+  { tone: "amber" as const, title: "NINEA expires in 22 days — A. Fall", sub: "Business Account · Compliance", time: "6h ago" },
+  { tone: "amber" as const, title: "Attestation BE expires 12d — O. Ndiaye", sub: "EDD · Beneficial Ownership", time: "1d ago" },
+  { tone: "amber" as const, title: "Justificatif expires 8d — Awa Gueye", sub: "Business Account · KYC stage", time: "1d ago" },
+]
+
+function AlertsList({ onNav }: { onNav?: (r: string) => void }) {
+  return (
+    <div className="flex flex-col gap-2">
+      {alertItems.map((a, i) => (
+        <div key={i} className="flex items-start gap-2.5 rounded-lg p-2 hover:bg-muted/50 transition-colors">
+          <div className={`mt-0.5 size-7 rounded-lg flex items-center justify-center shrink-0 ${a.tone === "red" ? "bg-red-500/15 text-red-500" : "bg-amber-500/15 text-amber-500"}`}>
+            {a.tone === "red" ? <IconAlertTriangle size={14} /> : <IconCalendar size={14} />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-semibold truncate">{a.title}</div>
+            <div className="text-xs text-muted-foreground truncate">{a.sub}</div>
+          </div>
+          <span className="text-[10px] text-muted-foreground shrink-0">{a.time}</span>
+        </div>
+      ))}
+      <Button variant="ghost" size="sm" className="w-full justify-center mt-1" onClick={() => onNav?.("activity")}>
+        View all activity →
+      </Button>
+    </div>
+  )
+}
+
+// ---- Top agents ----
+const agentGradients = [
+  "linear-gradient(135deg,#f59e0b,#ef4444)",
+  "linear-gradient(135deg,#3B82F6,#8B5CF6)",
+  "linear-gradient(135deg,#10B981,#3B82F6)",
+  "linear-gradient(135deg,#8B5CF6,#ec4899)",
+  "linear-gradient(135deg,#0D9488,#3B82F6)",
+]
+const agentRankColors = ["#f59e0b", "#94a3b8", "#cd7c2f"]
+const agentRankEmojis = ["🥇", "🥈", "🥉"]
+
+const topAgents = [
+  { initials: "KN", name: "Khady Ndoye", role: "Compliance Officer", count: 24 },
+  { initials: "AD", name: "Awa Diagne", role: "Sr. Onboarding Agent", count: 19 },
+  { initials: "MK", name: "Moussa Kane", role: "Compliance Officer", count: 17 },
+  { initials: "NT", name: "Ndeye Thiaw", role: "Onboarding Agent", count: 14 },
+  { initials: "MS", name: "Mamadou Sy", role: "Onboarding Agent", count: 11 },
+]
+
+function TopAgents() {
+  const maxCount = topAgents[0].count
+  return (
+    <div className="flex flex-col gap-1">
+      {topAgents.map((a, i) => (
+        <div key={i} className="flex items-center gap-2.5 py-1.5">
+          <span className="text-sm w-5 shrink-0" style={{ color: agentRankColors[i] ?? "var(--muted-foreground)" }}>
+            {i < 3 ? agentRankEmojis[i] : i + 1}
+          </span>
+          <div className="size-7 rounded-lg flex items-center justify-center text-white text-[10px] font-bold shrink-0" style={{ background: agentGradients[i] }}>
+            {a.initials}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-semibold">{a.name}</div>
+            <div className="text-[10px] text-muted-foreground">{a.role}</div>
+          </div>
+          <div className="flex items-center gap-2 w-20">
+            <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+              <div className="h-full bg-primary rounded-full opacity-80" style={{ width: `${(a.count / maxCount) * 100}%` }} />
+            </div>
+            <span className="text-xs font-mono font-bold w-4 text-right">{a.count}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ---- Document health ----
+const docHealthTypes = [
+  { label: "Carte Nationale d'Identité", valid: 28, expiring: 3, expired: 1 },
+  { label: "RCCM (Registre du Commerce)", valid: 14, expiring: 2, expired: 0 },
+  { label: "NINEA", valid: 11, expiring: 4, expired: 2 },
+  { label: "Statuts de la Société", valid: 9, expiring: 0, expired: 0 },
+  { label: "Attestation Bénéficiaires", valid: 7, expiring: 3, expired: 1 },
+  { label: "Relevé Bancaire", valid: 6, expiring: 1, expired: 0 },
+]
+
+function DocHealth({ onNav }: { onNav?: (r: string) => void }) {
+  return (
+    <div className="flex flex-col gap-2">
+      {docHealthTypes.map((t, i) => {
+        const total = t.valid + t.expiring + t.expired
+        return (
+          <div key={i} className="flex items-center gap-2">
+            <div className="text-xs text-muted-foreground w-36 truncate shrink-0">{t.label}</div>
+            <div className="flex-1 h-2 rounded-full overflow-hidden bg-muted">
+              <div className="flex h-full">
+                <div style={{ width: `${(t.valid / total) * 100}%`, background: "#10B981" }} />
+                <div style={{ width: `${(t.expiring / total) * 100}%`, background: "#F59E0B" }} />
+                <div style={{ width: `${(t.expired / total) * 100}%`, background: "#EF4444" }} />
+              </div>
+            </div>
+            <span className="text-xs font-mono text-muted-foreground w-5 text-right shrink-0">{total}</span>
+          </div>
+        )
+      })}
+      <div className="flex gap-4 mt-2">
+        {[["Valid", "#10B981"], ["Expiring", "#F59E0B"], ["Expired", "#EF4444"]].map(([l, c]) => (
+          <span key={l} className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-semibold">
+            <span className="size-2 rounded-sm inline-block" style={{ background: c }} />{l}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ---- SLA Card ----
+function SLACard() {
+  return (
+    <div className="flex flex-col gap-3 h-full">
+      <div className="rounded-xl bg-gradient-to-br from-red-500/10 to-amber-500/5 border border-red-500/20 p-4 flex-1">
+        <div className="text-4xl font-black font-mono text-red-400 leading-none">6</div>
+        <div className="text-xs text-muted-foreground font-bold mt-1">days left</div>
+        <div className="text-xs text-muted-foreground mt-2.5 leading-relaxed">
+          BCEAO quarterly KYC review deadline. <strong className="text-foreground">12 accounts</strong> need urgent completion.
+        </div>
+        <Button size="sm" className="mt-3 bg-red-500/15 text-red-400 border border-red-500/25 hover:bg-red-500/25 rounded-lg text-xs font-bold" variant="ghost">
+          View at-risk accounts →
+        </Button>
+      </div>
+      <div className="rounded-xl bg-primary/8 border border-primary/20 p-3">
+        <div className="text-xs font-bold text-primary mb-2">This week&apos;s target</div>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+            <div className="h-full w-[68%] rounded-full bg-gradient-to-r from-primary to-blue-400" />
+          </div>
+          <span className="font-mono font-bold text-sm">17 / 25</span>
+        </div>
+        <div className="text-[10px] text-muted-foreground mt-1.5">Accounts processed this week</div>
+      </div>
+    </div>
+  )
+}
+
+// ---- Main Dashboard ----
+export function Dashboard({ onNav }: { onNav?: (r: string) => void }) {
+  const stuck = allCustomers.filter((c) => c.stuck).length
+  const expiring = allDocuments.filter((d) => d.status === "expiring").length + 9
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Hero banner */}
+      <div className="relative rounded-2xl overflow-hidden bg-linear-to-br from-primary/80 to-primary p-6">
+        <div className="absolute inset-0 opacity-20" style={{
+          backgroundImage: "radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 60%), radial-gradient(ellipse at 20% 80%, rgba(139,92,246,0.3) 0%, transparent 60%)"
+        }} />
+        <div className="relative">
+          <div className="flex items-start justify-between mb-5">
+            <div>
+              <h1 className="text-xl font-bold text-white">Operations Dashboard</h1>
+              <p className="text-white text-sm mt-0.5">CBAO Groupe Attijariwafa Bank · Dakar HQ · Friday, 25 April 2026</p>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="ghost" className="bg-white/10 text-white hover:bg-white/20 border-0" onClick={() => onNav?.("activity")}>
+                <IconActivity size={14} /> Activity log
+              </Button>
+              <Button size="sm" className="bg-white text-blue-700 hover:bg-blue-50">
+                <IconPlus size={14} /> New customer
+              </Button>
+            </div>
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            <HeroKPI icon={IconUsers} label="Total customers" value="1,847" trend="↑ 4.2% this month" spark={[12,14,13,15,17,16,18,20,19,22,24,26,28]} />
+            <HeroKPI icon={IconColumns} label="In onboarding" value={allCustomers.filter(c => c.stage !== "approved").length + 126} trend="+12 this week" spark={[20,22,24,23,25,27,28,30,29,32,34,36,38]} />
+            <HeroKPI icon={IconCheck} label="Approved this month" value="47" trend="↑ 8% vs last month" spark={[30,34,32,38,40,42,38,44,46,45,47,47,47]} />
+            <HeroKPI icon={IconAlertTriangle} label="Alerts requiring action" value={stuck + expiring} trend={`${stuck} stuck · ${expiring} expiring`} spark={[6,7,8,8,9,10,11,10,12,13,14,15,16]} />
+          </div>
+        </div>
+      </div>
+
+      {/* Row 1: Completion | Throughput | Alerts */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle className="text-sm">Completion Rate</CardTitle>
+                <CardDescription className="text-xs">SLA performance breakdown</CardDescription>
+              </div>
+              <TkBadge tone="green" dot>Healthy</TkBadge>
+            </div>
+          </CardHeader>
+          <CardContent><CompletionPanel /></CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle className="text-sm">Monthly Throughput</CardTitle>
+                <CardDescription className="text-xs">Accounts fully onboarded</CardDescription>
+              </div>
+              <span className="text-2xl font-black font-mono text-primary">399</span>
+            </div>
+          </CardHeader>
+          <CardContent><ThroughputChart /></CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle className="text-sm">Alerts Requiring Action</CardTitle>
+                <CardDescription className="text-xs">Documents & stuck accounts</CardDescription>
+              </div>
+              <TkBadge tone="red" dot>8 open</TkBadge>
+            </div>
+          </CardHeader>
+          <CardContent><AlertsList onNav={onNav} /></CardContent>
+        </Card>
+      </div>
+
+      {/* Row 2: SLA | Top agents | Doc health */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <Card className="flex flex-col">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">BCEAO Deadline</CardTitle>
+            <CardDescription className="text-xs">Quarterly compliance review</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1"><SLACard /></CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle className="text-sm">Top Agents</CardTitle>
+                <CardDescription className="text-xs">Accounts processed · April</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent><TopAgents /></CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <CardTitle className="text-sm">Document Health</CardTitle>
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onNav?.("documents")}>
+                View all →
+              </Button>
+            </div>
+            <CardDescription className="text-xs">By document type</CardDescription>
+          </CardHeader>
+          <CardContent><DocHealth onNav={onNav} /></CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
