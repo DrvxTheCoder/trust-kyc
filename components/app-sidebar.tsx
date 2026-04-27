@@ -20,18 +20,18 @@ import {
   IconLayoutDashboard,
   IconUsers,
   IconColumns,
-  IconFileText,
   IconClock,
   IconGitBranch,
   IconUserCheck,
   IconSettings,
+  IconFolder,
 } from "@tabler/icons-react"
 
 const mainNav = [
   { id: "dashboard", label: "Dashboard", icon: IconLayoutDashboard },
   { id: "customers", label: "Customers", icon: IconUsers },
   { id: "pipeline", label: "Pipeline", icon: IconColumns },
-  { id: "documents", label: "Documents", icon: IconFileText },
+  { id: "documents", label: "Documents", icon: IconFolder },
   { id: "activity", label: "Activity Log", icon: IconClock },
 ]
 

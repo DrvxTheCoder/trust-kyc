@@ -3,7 +3,11 @@
     "allow": [
       "WebFetch(domain:api.anthropic.com)",
       "Skill(claude-api)",
-      "Skill(claude-api:*)"
+      "Skill(claude-api:*)",
+      "Bash(npx shadcn@latest add command --yes)",
+      "Bash(npm install *)",
+      "Bash(node -e \"require\\('lucide-react'\\)\")",
+      "Bash(npx tsc *)"
     ]
   }
 }

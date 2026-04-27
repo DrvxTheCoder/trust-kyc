@@ -1,16 +1,18 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import * as React from "react"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { TkBadge } from "@/components/ui/tk-badge"
 import { Sparkline } from "@/components/kyc/sparkline"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { PieChart, Pie, Label, BarChart, Bar, CartesianGrid, XAxis, LabelList } from "recharts"
 import { customers as allCustomers, documents as allDocuments, activity, team } from "@/lib/data"
 import {
   IconUsers, IconColumns, IconCheck, IconAlertTriangle,
   IconActivity, IconPlus, IconCalendar, IconFlag,
+  IconEye,
+  IconExternalLink,
 } from "@tabler/icons-react"
 
 // ---- Hero KPI Card ----
@@ -39,7 +41,7 @@ function HeroKPI({
       </div>
       {spark && (
         <div className="opacity-70 shrink-0">
-          <Sparkline points={spark} color="rgba(255,255,255,0.8)" width={60} height={28} />
+          <Button variant={'outline'} size={'icon-lg'} className="rounded-lg border border-white/40"><IconExternalLink /></Button>
         </div>
       )}
     </div>
@@ -48,102 +50,74 @@ function HeroKPI({
 
 // ---- Throughput bar chart ----
 const throughputData = [
-  { m: "Oct", v: 41 }, { m: "Nov", v: 55 }, { m: "Dec", v: 38 },
-  { m: "Jan", v: 62 }, { m: "Feb", v: 70 }, { m: "Mar", v: 85 }, { m: "Apr", v: 48 },
+  { month: "Oct", accounts: 41 }, { month: "Nov", accounts: 55 }, { month: "Dec", accounts: 38 },
+  { month: "Jan", accounts: 62 }, { month: "Feb", accounts: 70 }, { month: "Mar", accounts: 85 }, { month: "Apr", accounts: 48 },
 ]
 
-function ThroughputChart() {
-  const max = Math.max(...throughputData.map((d) => d.v))
-  const [hovered, setHovered] = useState<number | null>(null)
+const throughputConfig = {
+  accounts: { label: "Accounts", color: "var(--chart-1)" },
+} satisfies ChartConfig
 
+function ThroughputChart() {
   return (
-    <div>
-      <div className="flex items-end gap-1.5 h-36">
-        {throughputData.map((x, i) => {
-          const isCurrent = i === throughputData.length - 1
-          const isHov = hovered === i
-          return (
-            <div
-              key={i}
-              className="flex-1 flex flex-col items-center gap-1 cursor-default"
-              onMouseEnter={() => setHovered(i)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              {isHov && (
-                <div className="bg-popover border rounded-md px-2 py-0.5 text-xs font-mono font-bold whitespace-nowrap shadow-sm mb-1">
-                  {x.v} accounts
-                </div>
-              )}
-              <div
-                className="w-full rounded-t-md transition-all"
-                style={{
-                  height: `${(x.v / max) * 110}px`,
-                  background: isCurrent
-                    ? "linear-gradient(180deg,#60a5fa,#2563EB)"
-                    : isHov
-                    ? "rgba(59,130,246,0.5)"
-                    : "rgba(59,130,246,0.2)",
-                  boxShadow: isCurrent ? "0 4px 16px -4px rgba(37,99,235,0.4)" : "none",
-                }}
-              />
-              <div className="text-[10px] text-muted-foreground font-medium">{x.m}</div>
-            </div>
-          )
-        })}
-      </div>
-      <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
-        <span>Oct 2025 — Apr 2026</span>
-        <span className="font-mono font-bold text-emerald-500">↑ 16.8% avg growth</span>
-      </div>
+    <div className="h-full">
+      <ChartContainer config={throughputConfig} className="h-full w-full">
+        <BarChart data={throughputData} margin={{ top: 20 }}>
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey="month"
+            tickLine={false}
+            tickMargin={8}
+            axisLine={false}
+          />
+          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+          <Bar dataKey="accounts" fill="var(--color-accounts)" radius={6}>
+            <LabelList position="top" offset={10} className="fill-foreground" fontSize={11} />
+          </Bar>
+        </BarChart>
+      </ChartContainer>
     </div>
   )
 }
 
 // ---- Completion donut ----
-const pieData = [
-  { name: "Approved on time", value: 62, color: "#10B981" },
-  { name: "Approved (delayed)", value: 18, color: "#F59E0B" },
-  { name: "In progress", value: 14, color: "#3B82F6" },
-  { name: "Stuck / escalated", value: 6, color: "#EF4444" },
+const completionConfig = {
+  value: { label: "Accounts" },
+  approvedTime: { label: "Approved on time", color: "#10B981" },
+  approvedDelayed: { label: "Approved (delayed)", color: "#F59E0B" },
+  inProgress: { label: "In progress", color: "#3B82F6" },
+  stuck: { label: "Stuck / escalated", color: "#EF4444" },
+} satisfies ChartConfig
+
+const completionData = [
+  { key: "approvedTime", label: "Approved on time", value: 62, color: "#10B981", fill: "var(--color-approvedTime)" },
+  { key: "approvedDelayed", label: "Approved (delayed)", value: 18, color: "#F59E0B", fill: "var(--color-approvedDelayed)" },
+  { key: "inProgress", label: "In progress", value: 14, color: "#3B82F6", fill: "var(--color-inProgress)" },
+  { key: "stuck", label: "Stuck / escalated", value: 6, color: "#EF4444", fill: "var(--color-stuck)" },
 ]
 
 function CompletionPanel() {
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-4">
-        <div className="relative size-36 shrink-0">
-          <ChartContainer config={{}} className="size-36">
-            <PieChart>
-              <Pie data={pieData} cx="50%" cy="50%" innerRadius={46} outerRadius={65} dataKey="value" strokeWidth={0}>
-                {pieData.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ChartContainer>
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-2xl font-bold">62%</span>
-            <span className="text-xs text-muted-foreground">on time</span>
-          </div>
-        </div>
-        <div className="flex-1 flex flex-col gap-2">
-          {pieData.map((b) => (
-            <div key={b.name} className="flex flex-col gap-1">
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="text-muted-foreground">{b.name}</span>
-                <span className="font-mono" style={{ color: b.color }}>{b.value}%</span>
-              </div>
-              <div className="h-1 rounded-full bg-muted overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${b.value}%`, background: b.color, opacity: 0.85 }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
-        <span>↑</span>
-        <span><strong>+4.1%</strong> completion rate vs last month</span>
-      </div>
+    <div className="flex items-center justify-center h-full py-2">
+      <ChartContainer config={completionConfig} className="mx-auto aspect-square max-h-[220px] w-full">
+        <PieChart>
+          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+          <Pie data={completionData} dataKey="value" nameKey="label" innerRadius={68} outerRadius={98} strokeWidth={0}>
+            <Label
+              content={({ viewBox }) => {
+                if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                  return (
+                    <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
+                      <tspan x={viewBox.cx} y={viewBox.cy} className="fill-foreground text-3xl font-bold">62%</tspan>
+                      <tspan x={viewBox.cx} y={(viewBox.cy || 0) + 24} className="fill-muted-foreground text-xs">on time</tspan>
+                    </text>
+                  )
+                }
+              }}
+            />
+          </Pie>
+        </PieChart>
+      </ChartContainer>
     </div>
   )
 }
@@ -302,7 +276,7 @@ export function Dashboard({ onNav }: { onNav?: (r: string) => void }) {
   return (
     <div className="flex flex-col gap-6">
       {/* Hero banner */}
-      <div className="relative rounded-2xl overflow-hidden bg-linear-to-br from-primary/80 to-primary p-6">
+      <div className="relative rounded-2xl overflow-hidden bg-linear-to-br from-red-500 to-red-800 p-6">
         <div className="absolute inset-0 opacity-20" style={{
           backgroundImage: "radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 60%), radial-gradient(ellipse at 20% 80%, rgba(139,92,246,0.3) 0%, transparent 60%)"
         }} />
@@ -310,15 +284,15 @@ export function Dashboard({ onNav }: { onNav?: (r: string) => void }) {
           <div className="flex items-start justify-between mb-5">
             <div>
               <h1 className="text-xl font-bold text-white">Operations Dashboard</h1>
-              <p className="text-white text-sm mt-0.5">CBAO Groupe Attijariwafa Bank · Dakar HQ · Friday, 25 April 2026</p>
+              <p className="text-white text-sm mt-0.5">United Bank of Africa · Agence Almadies · Friday, 25 April 2026</p>
             </div>
             <div className="flex gap-2">
               <Button size="sm" variant="ghost" className="bg-white/10 text-white hover:bg-white/20 border-0" onClick={() => onNav?.("activity")}>
                 <IconActivity size={14} /> Activity log
               </Button>
-              <Button size="sm" className="bg-white text-blue-700 hover:bg-blue-50">
+              {/* <Button size="sm" className="bg-white text-blue-700 hover:bg-blue-50">
                 <IconPlus size={14} /> New customer
-              </Button>
+              </Button> */}
             </div>
           </div>
           <div className="flex gap-3 flex-wrap">
@@ -332,8 +306,8 @@ export function Dashboard({ onNav }: { onNav?: (r: string) => void }) {
 
       {/* Row 1: Completion | Throughput | Alerts */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
+        <Card className="flex flex-col">
+          <CardHeader className="border-b">
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle className="text-sm">Completion Rate</CardTitle>
@@ -342,20 +316,40 @@ export function Dashboard({ onNav }: { onNav?: (r: string) => void }) {
               <TkBadge tone="green" dot>Healthy</TkBadge>
             </div>
           </CardHeader>
-          <CardContent><CompletionPanel /></CardContent>
+          <CardContent className="flex-1"><CompletionPanel /></CardContent>
+          <CardFooter className="flex flex-col gap-3 pt-0">
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5">
+              {completionData.map((b) => (
+                <div key={b.key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="size-2 rounded-full shrink-0" style={{ background: b.color }} />
+                  {b.label}
+                </div>
+              ))}
+            </div>
+            <div className="w-full rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+              <span>↑</span>
+              <span><strong>+4.1%</strong> completion rate vs last month</span>
+            </div>
+          </CardFooter>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
+        <Card className="flex flex-col">
+          <CardHeader className="border-b">
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle className="text-sm">Monthly Throughput</CardTitle>
                 <CardDescription className="text-xs">Accounts fully onboarded</CardDescription>
               </div>
-              <span className="text-2xl font-black font-mono text-primary">399</span>
+              <span className="text-2xl font-bold border px-4 rounded-lg text-muted-foreground">399</span>
             </div>
           </CardHeader>
-          <CardContent><ThroughputChart /></CardContent>
+          <CardContent className="flex-1"><ThroughputChart /></CardContent>
+          <CardFooter className="flex items-center justify-end pt-0">
+            <div className="w-full rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+              <span>↑</span>
+              <span><strong>+16.8%</strong> avg growth</span>
+            </div>
+          </CardFooter>
         </Card>
 
         <Card>
