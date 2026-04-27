@@ -47,7 +47,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 
 export function AppSidebar({ currentRoute = "dashboard", onNav, ...props }: AppSidebarProps) {
   return (
-    <Sidebar collapsible="icon" {...props} className="pt-14">
+    <Sidebar collapsible="icon" {...props} className="md:pt-14">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>

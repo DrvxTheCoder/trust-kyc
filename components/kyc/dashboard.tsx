@@ -11,9 +11,12 @@ import { customers as allCustomers, documents as allDocuments, activity, team } 
 import {
   IconUsers, IconColumns, IconCheck, IconAlertTriangle,
   IconActivity, IconPlus, IconCalendar, IconFlag,
-  IconEye,
   IconExternalLink,
+  IconUsersPlus,
+  IconChevronRight,
 } from "@tabler/icons-react"
+import { TextureOverlay } from "@/components/ui/texture-overlay"
+
 
 // ---- Hero KPI Card ----
 function HeroKPI({
@@ -90,18 +93,18 @@ const completionConfig = {
 } satisfies ChartConfig
 
 const completionData = [
-  { key: "approvedTime", label: "Approved on time", value: 62, color: "#10B981", fill: "var(--color-approvedTime)" },
-  { key: "approvedDelayed", label: "Approved (delayed)", value: 18, color: "#F59E0B", fill: "var(--color-approvedDelayed)" },
-  { key: "inProgress", label: "In progress", value: 14, color: "#3B82F6", fill: "var(--color-inProgress)" },
-  { key: "stuck", label: "Stuck / escalated", value: 6, color: "#EF4444", fill: "var(--color-stuck)" },
+  { key: "approvedTime", label: "On time (%)", value: 62, color: "#10B981", fill: "var(--color-approvedTime)" },
+  { key: "approvedDelayed", label: "Delayed (%)", value: 18, color: "#F59E0B", fill: "var(--color-approvedDelayed)" },
+  { key: "inProgress", label: "In progress (%)", value: 14, color: "#3B82F6", fill: "var(--color-inProgress)" },
+  { key: "stuck", label: "Stuck (%)", value: 6, color: "#EF4444", fill: "var(--color-stuck)" },
 ]
 
 function CompletionPanel() {
   return (
     <div className="flex items-center justify-center h-full py-2">
-      <ChartContainer config={completionConfig} className="mx-auto aspect-square max-h-[220px] w-full">
+      <ChartContainer config={completionConfig} className="mx-auto aspect-square max-h-55 w-full">
         <PieChart>
-          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+          <ChartTooltip cursor={true} content={<ChartTooltipContent hideLabel />} />
           <Pie data={completionData} dataKey="value" nameKey="label" innerRadius={68} outerRadius={98} strokeWidth={0}>
             <Label
               content={({ viewBox }) => {
@@ -135,7 +138,7 @@ function AlertsList({ onNav }: { onNav?: (r: string) => void }) {
   return (
     <div className="flex flex-col gap-2">
       {alertItems.map((a, i) => (
-        <div key={i} className="flex items-start gap-2.5 rounded-lg p-2 hover:bg-muted/50 transition-colors">
+        <div key={i} className="flex items-start gap-2.5 rounded-lg p-2 border hover:bg-muted/50 transition-colors">
           <div className={`mt-0.5 size-7 rounded-lg flex items-center justify-center shrink-0 ${a.tone === "red" ? "bg-red-500/15 text-red-500" : "bg-amber-500/15 text-amber-500"}`}>
             {a.tone === "red" ? <IconAlertTriangle size={14} /> : <IconCalendar size={14} />}
           </div>
@@ -146,9 +149,6 @@ function AlertsList({ onNav }: { onNav?: (r: string) => void }) {
           <span className="text-[10px] text-muted-foreground shrink-0">{a.time}</span>
         </div>
       ))}
-      <Button variant="ghost" size="sm" className="w-full justify-center mt-1" onClick={() => onNav?.("activity")}>
-        View all activity →
-      </Button>
     </div>
   )
 }
@@ -272,19 +272,19 @@ function SLACard() {
 export function Dashboard({ onNav }: { onNav?: (r: string) => void }) {
   const stuck = allCustomers.filter((c) => c.stuck).length
   const expiring = allDocuments.filter((d) => d.status === "expiring").length + 9
+  const current = new Date();
+  const today = `${current.getDate()}/${current.getMonth() + 1}/${current.getFullYear()}`
+
 
   return (
     <div className="flex flex-col gap-6">
       {/* Hero banner */}
       <div className="relative rounded-2xl overflow-hidden bg-linear-to-br from-red-500 to-red-800 p-6">
-        <div className="absolute inset-0 opacity-20" style={{
-          backgroundImage: "radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 60%), radial-gradient(ellipse at 20% 80%, rgba(139,92,246,0.3) 0%, transparent 60%)"
-        }} />
-        <div className="relative">
-          <div className="flex items-start justify-between mb-5">
+        <div className="flex flex-col gap-2">
+          
+          <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-xl font-bold text-white">Operations Dashboard</h1>
-              <p className="text-white text-sm mt-0.5">United Bank of Africa · Agence Almadies · Friday, 25 April 2026</p>
+              <h1 className="text-lg md:text-xl font-bold text-white">Operations Dashboard</h1>
             </div>
             <div className="flex gap-2">
               <Button size="sm" variant="ghost" className="bg-white/10 text-white hover:bg-white/20 border-0" onClick={() => onNav?.("activity")}>
@@ -295,6 +295,7 @@ export function Dashboard({ onNav }: { onNav?: (r: string) => void }) {
               </Button> */}
             </div>
           </div>
+          <div className="mb-5 text-white text-xs md:text-sm mt-0.5">UBA · Agence Almadies · {today}</div>
           <div className="flex gap-3 flex-wrap">
             <HeroKPI icon={IconUsers} label="Total customers" value="1,847" trend="↑ 4.2% this month" spark={[12,14,13,15,17,16,18,20,19,22,24,26,28]} />
             <HeroKPI icon={IconColumns} label="In onboarding" value={allCustomers.filter(c => c.stage !== "approved").length + 126} trend="+12 this week" spark={[20,22,24,23,25,27,28,30,29,32,34,36,38]} />
@@ -306,8 +307,8 @@ export function Dashboard({ onNav }: { onNav?: (r: string) => void }) {
 
       {/* Row 1: Completion | Throughput | Alerts */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <Card className="flex flex-col">
-          <CardHeader className="border-b">
+        <Card className="flex flex-col p-0">
+          <CardHeader className="border-b p-6 bg-linear-to-br from-secondary/10 to-secondary">
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle className="text-sm">Completion Rate</CardTitle>
@@ -317,7 +318,7 @@ export function Dashboard({ onNav }: { onNav?: (r: string) => void }) {
             </div>
           </CardHeader>
           <CardContent className="flex-1"><CompletionPanel /></CardContent>
-          <CardFooter className="flex flex-col gap-3 pt-0">
+          <CardFooter className="flex flex-col gap-3 pt-0 p-6">
             <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5">
               {completionData.map((b) => (
                 <div key={b.key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -333,18 +334,21 @@ export function Dashboard({ onNav }: { onNav?: (r: string) => void }) {
           </CardFooter>
         </Card>
 
-        <Card className="flex flex-col">
-          <CardHeader className="border-b">
+        <Card className="flex flex-col p-0">
+          <CardHeader className="border-b p-6 bg-linear-to-br from-secondary/10 to-secondary">
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle className="text-sm">Monthly Throughput</CardTitle>
                 <CardDescription className="text-xs">Accounts fully onboarded</CardDescription>
               </div>
-              <span className="text-2xl font-bold border px-4 rounded-lg text-muted-foreground">399</span>
+              <div className="flex flex-row justify-items-center items-center text-muted-foreground border px-4 rounded-lg gap-2">
+                <IconUsersPlus className="size-4 md:size-5" />
+                <text className="text-lg md:text-xl font-medium">48</text>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="flex-1"><ThroughputChart /></CardContent>
-          <CardFooter className="flex items-center justify-end pt-0">
+          <CardFooter className="flex items-center justify-end pt-0 p-6">
             <div className="w-full rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
               <span>↑</span>
               <span><strong>+16.8%</strong> avg growth</span>
@@ -352,8 +356,8 @@ export function Dashboard({ onNav }: { onNav?: (r: string) => void }) {
           </CardFooter>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
+        <Card className="flex flex-col p-0">
+          <CardHeader className="p-6 border-b">
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle className="text-sm">Alerts Requiring Action</CardTitle>
@@ -363,6 +367,11 @@ export function Dashboard({ onNav }: { onNav?: (r: string) => void }) {
             </div>
           </CardHeader>
           <CardContent><AlertsList onNav={onNav} /></CardContent>
+          <CardFooter className="flex flex-row justify-end p-6">
+            <Button size="sm" variant={"outline"} className="w-fit justify-center mt-3" onClick={() => onNav?.("activity")}>
+              View all activity <IconChevronRight className="h-4 w-4" />
+            </Button>
+          </CardFooter>
         </Card>
       </div>
 

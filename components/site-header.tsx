@@ -9,6 +9,7 @@ import {
   HelpCircleIcon,
   HomeIcon,
   InboxIcon,
+  MenuIcon,
   SearchIcon,
   SettingsIcon,
   UserIcon,
@@ -78,12 +79,21 @@ export function SiteHeader({ currentRoute = "dashboard", customerName, onNav }: 
   return (
     <header className="sticky top-0 z-50 flex w-full items-center border-b bg-background">
       <div className="flex h-(--header-height) w-full items-center gap-2 px-2">
-        <div className="px-1" onClick={toggleSidebar}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="shrink-0 sm:hidden"
+          onClick={toggleSidebar}
+          aria-label="Toggle sidebar"
+        >
+          <MenuIcon className="h-5 w-5" />
+        </Button>
+        <div className="hidden px-1 sm:block" onClick={toggleSidebar} style={{ cursor: "pointer" }}>
           <TrustKYCLogoFull size={23} className="text-foreground" />
         </div>
         <Separator
           orientation="vertical"
-          className="me-2 data-vertical:h-4 data-vertical:self-auto"
+          className="me-2 hidden data-vertical:h-4 data-vertical:self-auto sm:block"
         />
         <Breadcrumb className="hidden sm:block">
           <BreadcrumbList>
@@ -124,7 +134,7 @@ export function SiteHeader({ currentRoute = "dashboard", customerName, onNav }: 
         <Button
           variant="outline"
           onClick={() => setOpen(true)}
-          className="ms-auto flex h-8 w-full max-w-xs items-center justify-between gap-2 rounded-md px-3 text-sm text-muted-foreground sm:w-64"
+          className="ms-auto flex h-8 min-w-0 max-w-xs flex-1 items-center justify-between gap-2 rounded-md px-3 text-sm text-muted-foreground sm:w-64 sm:flex-none"
         >
           <span className="flex items-center gap-2">
             <SearchIcon className="h-3.5 w-3.5" />
@@ -202,7 +212,9 @@ export function SiteHeader({ currentRoute = "dashboard", customerName, onNav }: 
           </Command>
         </CommandDialog>
 
-        <ModeToggle />
+        <div className="shrink-0">
+          <ModeToggle />
+        </div>
       </div>
     </header>
   )
