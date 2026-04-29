@@ -280,7 +280,7 @@ const carouselSlides = [
     href: "/dashboard/customers",
     bgClass: "from-blue-600 via-blue-800 to-indigo-900",
     BgIcon: IconUsers,
-    image: "/assets/featured/customers.webp",
+    image: "/assets/featured/customers-2.webp",
   },
   {
     tag: "KYC Pipeline",
@@ -288,9 +288,9 @@ const carouselSlides = [
     description: "Track each onboarding stage, spot bottlenecks early, and assign work to the right agent.",
     cta: "Open Pipeline",
     href: "/dashboard/pipeline",
-    bgClass: "from-violet-600 via-purple-700 to-violet-900",
+    bgClass: "from-blue-600 via-blue-800 to-indigo-900",
     BgIcon: IconColumns,
-    image: null,
+    image: "/assets/featured/pipeline.webp",
   },
   {
     tag: "Document Tracking",
@@ -298,7 +298,7 @@ const carouselSlides = [
     description: "Stay ahead of compliance issues with automatic expiry tracking and document health scores.",
     cta: "View Documents",
     href: "/dashboard/documents",
-    bgClass: "from-teal-500 via-teal-700 to-teal-900",
+    bgClass: "from-blue-600 via-blue-800 to-indigo-900",
     BgIcon: IconCalendar,
     image: "/assets/featured/documents.webp",
   },
@@ -308,9 +308,9 @@ const carouselSlides = [
     description: "Monitor approvals, uploads, and status changes in real-time with the team activity log.",
     cta: "Open Activity Log",
     href: "/dashboard/activity",
-    bgClass: "from-amber-500 via-orange-700 to-amber-900",
+    bgClass: "from-blue-600 via-blue-800 to-indigo-900",
     BgIcon: IconActivity,
-    image: "/assets/featured/audit-trail.webp",
+    image: "/assets/featured/audit-trail-2.jpg",
   },
 ]
 
@@ -345,17 +345,19 @@ function FeatureCarousel() {
       {/* Photo background */}
       {hasImage && (
         <Image
+          key={current}
           src={slide.image!}
           alt={slide.tag}
           fill
-          className="object-cover transition-opacity duration-700"
+          className="object-cover carousel-image-enter"
           sizes="(max-width: 1280px) 100vw, 33vw"
+          unoptimized
           priority
         />
       )}
 
       {/* Color tint overlay — lighter on image slides */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${slide.bgClass} transition-colors duration-700 ${hasImage ? "opacity-0" : "opacity-100"}`} />
+      <div className={`absolute inset-0 bg-gradient-to-br ${slide.bgClass} transition-colors duration-700 ${hasImage ? "opacity-30" : "opacity-100"}`} />
 
       {/* Dot pattern + decorative icon — only for gradient-only slides */}
       {!hasImage && (
@@ -371,14 +373,14 @@ function FeatureCarousel() {
       )}
 
       {/* Bottom scrim for text legibility */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent" />
 
       {/* Content */}
       <div className={`absolute bottom-0 left-0 right-0 p-5 flex flex-col gap-3 transition-opacity duration-200 ${fading ? "opacity-0" : "opacity-100"}`}>
         <div className="flex flex-col gap-1.5">
           <div className="text-[10px] font-bold tracking-widest uppercase text-white/50">{slide.tag}</div>
-          <div className="text-base font-bold text-white leading-snug">{slide.title}</div>
-          <div className="text-xs text-white/65 leading-relaxed">{slide.description}</div>
+          <div className="text-2xl font-bold text-white leading-snug">{slide.title}</div>
+          <div className="text-md  text-white/65 leading-relaxed">{slide.description}</div>
         </div>
         <div className="flex items-center justify-between">
           <Button
@@ -444,6 +446,7 @@ export function Dashboard() {
 
       {/* Row 1: Completion | Throughput | Alerts */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+
         <Card className="flex flex-col p-0">
           <CardHeader className="border-b p-6 bg-linear-to-br from-secondary/10 to-secondary">
             <div className="flex items-start justify-between">
@@ -496,6 +499,7 @@ export function Dashboard() {
         <Card className="flex flex-col p-0 overflow-hidden">
           <FeatureCarousel />
         </Card>
+
       </div>
 
       {/* Row 2: SLA | Top agents | Doc health */}

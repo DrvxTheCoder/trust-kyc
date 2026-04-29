@@ -130,3 +130,16 @@
     @apply font-sans;
     }
 }
+
+@keyframes carousel-fade-in-right {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.carousel-image-enter {
+  animation: carousel-fade-in-right 2s ease-in-out;
+}
