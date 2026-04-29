@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { TkBadge, StatusBadge } from "@/components/ui/tk-badge"
-import { Document, Customer, documents as allDocuments, docTypes, fmtDate } from "@/lib/data"
+import { documents as allDocuments, docTypes, fmtDate } from "@/lib/data"
 import {
   IconDownload, IconUpload, IconSearch, IconFileText,
   IconCalendar, IconAlertTriangle, IconFlag, IconEye,
@@ -65,11 +66,8 @@ function SelectFilter({ label, value, options, onChange }: {
   )
 }
 
-interface DocumentsPageProps {
-  onOpenCustomer: (id: string) => void
-}
-
-export function DocumentsPage({ onOpenCustomer }: DocumentsPageProps) {
+export function DocumentsPage() {
+  const router = useRouter()
   const [filterType, setFilterType] = useState("All types")
   const [filterStatus, setFilterStatus] = useState("All statuses")
   const [query, setQuery] = useState("")
@@ -148,7 +146,7 @@ export function DocumentsPage({ onOpenCustomer }: DocumentsPageProps) {
                 {docs.map((d) => (
                   <tr
                     key={d.id}
-                    onClick={() => onOpenCustomer(d.customerId)}
+                    onClick={() => router.push(`/dashboard/customers/${d.customerId}`)}
                     className="border-b last:border-0 hover:bg-muted/40 cursor-pointer transition-colors"
                   >
                     <td className="px-3 py-2.5">

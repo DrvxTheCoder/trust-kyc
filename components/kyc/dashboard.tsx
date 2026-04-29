@@ -1,6 +1,8 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { TkBadge } from "@/components/ui/tk-badge"
@@ -134,7 +136,7 @@ const alertItems = [
   { tone: "amber" as const, title: "Justificatif expires 8d — Awa Gueye", sub: "Business Account · KYC stage", time: "1d ago" },
 ]
 
-function AlertsList({ onNav }: { onNav?: (r: string) => void }) {
+function AlertsList() {
   return (
     <div className="flex flex-col gap-2">
       {alertItems.map((a, i) => (
@@ -210,7 +212,7 @@ const docHealthTypes = [
   { label: "Relevé Bancaire", valid: 6, expiring: 1, expired: 0 },
 ]
 
-function DocHealth({ onNav }: { onNav?: (r: string) => void }) {
+function DocHealth() {
   return (
     <div className="flex flex-col gap-2">
       {docHealthTypes.map((t, i) => {
@@ -268,8 +270,143 @@ function SLACard() {
   )
 }
 
+// ---- Feature Carousel ----
+const carouselSlides = [
+  {
+    tag: "Customer Management",
+    title: "Manage all your customers in one place",
+    description: "View KYC status, documents, and full activity history for every customer from a unified profile page.",
+    cta: "Browse Customers",
+    href: "/dashboard/customers",
+    bgClass: "from-blue-600 via-blue-800 to-indigo-900",
+    BgIcon: IconUsers,
+    image: "/assets/featured/customers.webp",
+  },
+  {
+    tag: "KYC Pipeline",
+    title: "Move accounts through the pipeline faster",
+    description: "Track each onboarding stage, spot bottlenecks early, and assign work to the right agent.",
+    cta: "Open Pipeline",
+    href: "/dashboard/pipeline",
+    bgClass: "from-violet-600 via-purple-700 to-violet-900",
+    BgIcon: IconColumns,
+    image: null,
+  },
+  {
+    tag: "Document Tracking",
+    title: "Never miss a document expiry again",
+    description: "Stay ahead of compliance issues with automatic expiry tracking and document health scores.",
+    cta: "View Documents",
+    href: "/dashboard/documents",
+    bgClass: "from-teal-500 via-teal-700 to-teal-900",
+    BgIcon: IconCalendar,
+    image: "/assets/featured/documents.webp",
+  },
+  {
+    tag: "Activity & Audit",
+    title: "Full audit trail for every team action",
+    description: "Monitor approvals, uploads, and status changes in real-time with the team activity log.",
+    cta: "Open Activity Log",
+    href: "/dashboard/activity",
+    bgClass: "from-amber-500 via-orange-700 to-amber-900",
+    BgIcon: IconActivity,
+    image: "/assets/featured/audit-trail.webp",
+  },
+]
+
+function FeatureCarousel() {
+  const router = useRouter()
+  const [current, setCurrent] = React.useState(0)
+  const [fading, setFading] = React.useState(false)
+
+  const goTo = React.useCallback((index: number) => {
+    setFading(true)
+    setTimeout(() => {
+      setCurrent(index)
+      setFading(false)
+    }, 180)
+  }, [])
+
+  React.useEffect(() => {
+    const t = setInterval(() => {
+      goTo((current + 1) % carouselSlides.length)
+    }, 5000)
+    return () => clearInterval(t)
+  }, [current, goTo])
+
+  const slide = carouselSlides[current]
+  const hasImage = !!slide.image
+
+  return (
+    <div className="relative h-full w-full min-h-[340px] overflow-hidden">
+      {/* Solid gradient base (always present as fallback) */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${slide.bgClass} transition-colors duration-700`} />
+
+      {/* Photo background */}
+      {hasImage && (
+        <Image
+          src={slide.image!}
+          alt={slide.tag}
+          fill
+          className="object-cover transition-opacity duration-700"
+          sizes="(max-width: 1280px) 100vw, 33vw"
+          priority
+        />
+      )}
+
+      {/* Color tint overlay — lighter on image slides */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${slide.bgClass} transition-colors duration-700 ${hasImage ? "opacity-0" : "opacity-100"}`} />
+
+      {/* Dot pattern + decorative icon — only for gradient-only slides */}
+      {!hasImage && (
+        <>
+          <div
+            className="absolute inset-0 opacity-[0.04] pointer-events-none"
+            style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "24px 24px" }}
+          />
+          <div className="absolute -right-8 -top-8 opacity-[0.07] pointer-events-none select-none text-white">
+            <slide.BgIcon size={240} stroke={1} />
+          </div>
+        </>
+      )}
+
+      {/* Bottom scrim for text legibility */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+      {/* Content */}
+      <div className={`absolute bottom-0 left-0 right-0 p-5 flex flex-col gap-3 transition-opacity duration-200 ${fading ? "opacity-0" : "opacity-100"}`}>
+        <div className="flex flex-col gap-1.5">
+          <div className="text-[10px] font-bold tracking-widest uppercase text-white/50">{slide.tag}</div>
+          <div className="text-base font-bold text-white leading-snug">{slide.title}</div>
+          <div className="text-xs text-white/65 leading-relaxed">{slide.description}</div>
+        </div>
+        <div className="flex items-center justify-between">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="bg-white/15 hover:bg-white/25 text-white border border-white/20 text-xs font-semibold px-3"
+            onClick={() => router.push(slide.href)}
+          >
+            {slide.cta} <IconChevronRight size={12} />
+          </Button>
+          <div className="flex items-center gap-1.5">
+            {carouselSlides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => goTo(i)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${i === current ? "w-5 bg-white" : "w-1.5 bg-white/35 hover:bg-white/60"}`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ---- Main Dashboard ----
-export function Dashboard({ onNav }: { onNav?: (r: string) => void }) {
+export function Dashboard() {
+  const router = useRouter()
   const stuck = allCustomers.filter((c) => c.stuck).length
   const expiring = allDocuments.filter((d) => d.status === "expiring").length + 9
   const current = new Date();
@@ -287,7 +424,7 @@ export function Dashboard({ onNav }: { onNav?: (r: string) => void }) {
               <h1 className="text-lg md:text-xl font-bold text-white">Operations Dashboard</h1>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" variant="ghost" className="bg-white/10 text-white hover:bg-white/20 border-0" onClick={() => onNav?.("activity")}>
+              <Button size="sm" variant="ghost" className="bg-white/10 text-white hover:bg-white/20 border-0" onClick={() => router.push("/dashboard/activity")}>
                 <IconActivity size={14} /> Activity log
               </Button>
               {/* <Button size="sm" className="bg-white text-blue-700 hover:bg-blue-50">
@@ -343,7 +480,7 @@ export function Dashboard({ onNav }: { onNav?: (r: string) => void }) {
               </div>
               <div className="flex flex-row justify-items-center items-center text-muted-foreground border px-4 rounded-lg gap-2">
                 <IconUsersPlus className="size-4 md:size-5" />
-                <text className="text-lg md:text-xl font-medium">48</text>
+                <span className="text-lg md:text-xl font-medium">48</span>
               </div>
             </div>
           </CardHeader>
@@ -356,22 +493,8 @@ export function Dashboard({ onNav }: { onNav?: (r: string) => void }) {
           </CardFooter>
         </Card>
 
-        <Card className="flex flex-col p-0">
-          <CardHeader className="p-6 border-b">
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-sm">Alerts Requiring Action</CardTitle>
-                <CardDescription className="text-xs">Documents & stuck accounts</CardDescription>
-              </div>
-              <TkBadge tone="red" dot>8 open</TkBadge>
-            </div>
-          </CardHeader>
-          <CardContent><AlertsList onNav={onNav} /></CardContent>
-          <CardFooter className="flex flex-row justify-end p-6">
-            <Button size="sm" variant={"outline"} className="w-fit justify-center mt-3" onClick={() => onNav?.("activity")}>
-              View all activity <IconChevronRight className="h-4 w-4" />
-            </Button>
-          </CardFooter>
+        <Card className="flex flex-col p-0 overflow-hidden">
+          <FeatureCarousel />
         </Card>
       </div>
 
@@ -401,13 +524,13 @@ export function Dashboard({ onNav }: { onNav?: (r: string) => void }) {
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">
               <CardTitle className="text-sm">Document Health</CardTitle>
-              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onNav?.("documents")}>
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => router.push("/dashboard/documents")}>
                 View all →
               </Button>
             </div>
             <CardDescription className="text-xs">By document type</CardDescription>
           </CardHeader>
-          <CardContent><DocHealth onNav={onNav} /></CardContent>
+          <CardContent><DocHealth /></CardContent>
         </Card>
       </div>
     </div>

@@ -1,12 +1,17 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { TkBadge, TypeBadge, RiskBadge } from "@/components/ui/tk-badge"
-import { Customer, fmtDate } from "@/lib/data"
+import { fmtDate } from "@/lib/data"
+import { useCustomerStore } from "@/lib/store"
 import { IconDownload, IconPlus } from "@tabler/icons-react"
 
-export function CustomersList({ customers, onOpen }: { customers: Customer[]; onOpen: (c: Customer) => void }) {
+export function CustomersList() {
+  const customers = useCustomerStore((s) => s.customers)
+  const router = useRouter()
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -38,7 +43,7 @@ export function CustomersList({ customers, onOpen }: { customers: Customer[]; on
                 {customers.map((c) => (
                   <tr
                     key={c.id}
-                    onClick={() => onOpen(c)}
+                    onClick={() => router.push(`/dashboard/customers/${c.id}`)}
                     className="border-b last:border-0 hover:bg-muted/40 cursor-pointer transition-colors"
                   >
                     <td className="px-4 py-3">

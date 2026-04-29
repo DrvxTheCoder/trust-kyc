@@ -43,15 +43,28 @@ export function TkBadge({ tone = "slate", dot = false, children, className }: Tk
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium",
-        toneClasses[tone],
-        className
+      "inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium",
+      toneClasses[tone],
+      className
       )}
     >
       {dot && (
-        <span className={cn("size-1.5 rounded-full shrink-0", dotClasses[tone])} />
+      <span className="relative inline-flex h-2 w-2 shrink-0">
+        <span
+        className={cn(
+          "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
+          dotClasses[tone]
+        )}
+        />
+        <span
+        className={cn(
+          "relative inline-flex rounded-full h-2 w-2",
+          dotClasses[tone]
+        )}
+        />
+      </span>
       )}
-      {children}
+      <small>{children}</small>
     </span>
   )
 }

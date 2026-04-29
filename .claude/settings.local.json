@@ -7,7 +7,9 @@
       "Bash(npx shadcn@latest add command --yes)",
       "Bash(npm install *)",
       "Bash(node -e \"require\\('lucide-react'\\)\")",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(pnpm add *)",
+      "Bash(pnpm tsc *)"
     ]
   }
 }

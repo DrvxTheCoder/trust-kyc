@@ -1,20 +1,17 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { KanbanBoard } from "@/components/kyc/kanban"
 import { TkBadge, TypeBadge, RiskBadge } from "@/components/ui/tk-badge"
-import { Customer, customers as allCustomers, workflows } from "@/lib/data"
+import { Customer, workflows } from "@/lib/data"
+import { useCustomerStore } from "@/lib/store"
 import { IconLayoutColumns, IconList } from "@tabler/icons-react"
 
-interface PipelinePageProps {
-  customers: Customer[]
-  onOpen: (c: Customer) => void
-  onMove: (customerId: string, stageId: string) => void
-}
-
-export function PipelinePage({ customers, onOpen, onMove }: PipelinePageProps) {
+export function PipelinePage() {
+  const { customers, moveCustomer } = useCustomerStore()
+  const router = useRouter()
   const [wfId, setWfId] = useState("business")
   const [view, setView] = useState<"kanban" | "list">("kanban")
 
@@ -25,6 +22,8 @@ export function PipelinePage({ customers, onOpen, onMove }: PipelinePageProps) {
     if (wfId === "basic") return customers.filter((c) => c.type === "Individual")
     return customers.filter((c) => c.type === "EDD")
   }, [wfId, customers])
+
+  const openCustomer = (c: Customer) => router.push(`/dashboard/customers/${c.id}`)
 
   return (
     <div className="flex flex-col gap-4">
@@ -65,11 +64,11 @@ export function PipelinePage({ customers, onOpen, onMove }: PipelinePageProps) {
       </div>
 
       {view === "kanban" ? (
-        <KanbanBoard customers={visible} stages={wf.stages} onOpen={onOpen} onMove={onMove} />
+        <KanbanBoard customers={visible} stages={wf.stages} onOpen={openCustomer} onMove={moveCustomer} />
       ) : (
         <Card>
           <CardContent className="p-0">
-            <PipelineTable customers={visible} workflow={wf} onOpen={onOpen} />
+            <PipelineTable customers={visible} workflow={wf} onOpen={openCustomer} />
           </CardContent>
         </Card>
       )}

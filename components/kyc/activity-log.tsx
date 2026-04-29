@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, Fragment } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { TkBadge, ActionBadge } from "@/components/ui/tk-badge"
@@ -94,9 +94,8 @@ export function ActivityLog() {
               </thead>
               <tbody>
                 {items.map((a, i) => (
-                  <>
+                  <Fragment key={i}>
                     <tr
-                      key={i}
                       onClick={() => setExpanded(expanded === i ? null : i)}
                       className="border-b hover:bg-muted/40 cursor-pointer transition-colors"
                     >
@@ -143,7 +142,7 @@ export function ActivityLog() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
                 {items.length === 0 && (
                   <tr><td colSpan={6} className="px-3 py-8 text-center text-xs text-muted-foreground">No events match these filters</td></tr>

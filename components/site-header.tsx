@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { usePathname, useRouter } from "next/navigation"
 import {
   BellIcon,
   CreditCardIcon,
@@ -12,7 +13,6 @@ import {
   MenuIcon,
   SearchIcon,
   SettingsIcon,
-  UserIcon,
   UsersIcon,
   WorkflowIcon,
 } from "lucide-react"
@@ -40,6 +40,7 @@ import { Separator } from "@/components/ui/separator"
 import { useSidebar } from "@/components/ui/sidebar"
 import { TrustKYCLogoFull } from "./icons/trustkyc-logo-full"
 import { ModeToggle } from "@/components/theme-toggle"
+import { useCustomerStore } from "@/lib/store"
 
 const routeLabels: Record<string, string> = {
   dashboard: "Dashboard",
@@ -50,20 +51,28 @@ const routeLabels: Record<string, string> = {
   workflows: "Workflows",
   team: "Team",
   settings: "Settings",
-  profile: "Customer Profile",
 }
 
-interface SiteHeaderProps {
-  currentRoute?: string
-  customerName?: string
-  onNav?: (route: string) => void
-}
-
-export function SiteHeader({ currentRoute = "dashboard", customerName, onNav }: SiteHeaderProps) {
+export function SiteHeader() {
+  const pathname = usePathname()
+  const router = useRouter()
   const { toggleSidebar } = useSidebar()
   const [open, setOpen] = React.useState(false)
 
-  const isProfile = currentRoute === "profile" && customerName
+  const segments = pathname.split("/").filter(Boolean)
+  const section = segments[1] ?? "dashboard"
+  const customerId = segments[1] === "customers" && segments[2] ? segments[2] : null
+
+  const customer = useCustomerStore((s) =>
+    customerId ? s.customers.find((c) => c.id === customerId) : undefined
+  )
+
+  const isProfile = !!customerId && !!customer
+
+  const nav = (path: string) => {
+    router.push(path)
+    setOpen(false)
+  }
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -100,31 +109,21 @@ export function SiteHeader({ currentRoute = "dashboard", customerName, onNav }: 
             {isProfile ? (
               <>
                 <BreadcrumbItem>
-                  <BreadcrumbLink
-                    href="#"
-                    onClick={(e) => { e.preventDefault(); onNav?.("customers") }}
-                  >
-                    Customers
-                  </BreadcrumbLink>
+                  <BreadcrumbLink href="/dashboard/customers">Customers</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>{customerName}</BreadcrumbPage>
+                  <BreadcrumbPage>{customer!.name}</BreadcrumbPage>
                 </BreadcrumbItem>
               </>
             ) : (
               <>
                 <BreadcrumbItem>
-                  <BreadcrumbLink
-                    href="#"
-                    onClick={(e) => { e.preventDefault(); onNav?.("dashboard") }}
-                  >
-                    TrustKYC
-                  </BreadcrumbLink>
+                  <BreadcrumbLink href="/dashboard">TrustKYC</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>{routeLabels[currentRoute] ?? currentRoute}</BreadcrumbPage>
+                  <BreadcrumbPage>{routeLabels[section] ?? section}</BreadcrumbPage>
                 </BreadcrumbItem>
               </>
             )}
@@ -147,68 +146,63 @@ export function SiteHeader({ currentRoute = "dashboard", customerName, onNav }: 
 
         <CommandDialog open={open} onOpenChange={setOpen}>
           <Command>
-          <CommandInput placeholder="Type a command or search..." />
-          <CommandList>
-            <CommandEmpty>No results found.</CommandEmpty>
-            <CommandGroup heading="Navigation">
-              <CommandItem onSelect={() => { onNav?.("dashboard"); setOpen(false) }}>
-                <HomeIcon />
-                <span>Dashboard</span>
-                <CommandShortcut>⌘H</CommandShortcut>
-              </CommandItem>
-              <CommandItem onSelect={() => { onNav?.("customers"); setOpen(false) }}>
-                <UsersIcon />
-                <span>Customers</span>
-                <CommandShortcut>⌘C</CommandShortcut>
-              </CommandItem>
-              <CommandItem onSelect={() => { onNav?.("documents"); setOpen(false) }}>
-                <FileTextIcon />
-                <span>Documents</span>
-                <CommandShortcut>⌘D</CommandShortcut>
-              </CommandItem>
-              <CommandItem onSelect={() => { onNav?.("pipeline"); setOpen(false) }}>
-                <FolderIcon />
-                <span>Pipeline</span>
-              </CommandItem>
-              <CommandItem onSelect={() => { onNav?.("activity"); setOpen(false) }}>
-                <InboxIcon />
-                <span>Activity Log</span>
-              </CommandItem>
-              <CommandItem onSelect={() => { onNav?.("workflows"); setOpen(false) }}>
-                <WorkflowIcon />
-                <span>Workflows</span>
-              </CommandItem>
-            </CommandGroup>
-            <CommandSeparator />
-            <CommandGroup heading="Account">
-              <CommandItem onSelect={() => { onNav?.("profile"); setOpen(false) }}>
-                <UserIcon />
-                <span>Profile</span>
-                <CommandShortcut>⌘P</CommandShortcut>
-              </CommandItem>
-              <CommandItem onSelect={() => { onNav?.("settings"); setOpen(false) }}>
-                <SettingsIcon />
-                <span>Settings</span>
-                <CommandShortcut>⌘S</CommandShortcut>
-              </CommandItem>
-              <CommandItem onSelect={() => { onNav?.("team"); setOpen(false) }}>
-                <UsersIcon />
-                <span>Team</span>
-              </CommandItem>
-              <CommandItem>
-                <CreditCardIcon />
-                <span>Billing</span>
-              </CommandItem>
-              <CommandItem>
-                <BellIcon />
-                <span>Notifications</span>
-              </CommandItem>
-              <CommandItem>
-                <HelpCircleIcon />
-                <span>Help & Support</span>
-              </CommandItem>
-            </CommandGroup>
-          </CommandList>
+            <CommandInput placeholder="Type a command or search..." />
+            <CommandList>
+              <CommandEmpty>No results found.</CommandEmpty>
+              <CommandGroup heading="Navigation">
+                <CommandItem onSelect={() => nav("/dashboard")}>
+                  <HomeIcon />
+                  <span>Dashboard</span>
+                  <CommandShortcut>⌘H</CommandShortcut>
+                </CommandItem>
+                <CommandItem onSelect={() => nav("/dashboard/customers")}>
+                  <UsersIcon />
+                  <span>Customers</span>
+                  <CommandShortcut>⌘C</CommandShortcut>
+                </CommandItem>
+                <CommandItem onSelect={() => nav("/dashboard/documents")}>
+                  <FileTextIcon />
+                  <span>Documents</span>
+                  <CommandShortcut>⌘D</CommandShortcut>
+                </CommandItem>
+                <CommandItem onSelect={() => nav("/dashboard/pipeline")}>
+                  <FolderIcon />
+                  <span>Pipeline</span>
+                </CommandItem>
+                <CommandItem onSelect={() => nav("/dashboard/activity")}>
+                  <InboxIcon />
+                  <span>Activity Log</span>
+                </CommandItem>
+                <CommandItem onSelect={() => nav("/dashboard/workflows")}>
+                  <WorkflowIcon />
+                  <span>Workflows</span>
+                </CommandItem>
+              </CommandGroup>
+              <CommandSeparator />
+              <CommandGroup heading="Account">
+                <CommandItem onSelect={() => nav("/dashboard/settings")}>
+                  <SettingsIcon />
+                  <span>Settings</span>
+                  <CommandShortcut>⌘S</CommandShortcut>
+                </CommandItem>
+                <CommandItem onSelect={() => nav("/dashboard/team")}>
+                  <UsersIcon />
+                  <span>Team</span>
+                </CommandItem>
+                <CommandItem>
+                  <CreditCardIcon />
+                  <span>Billing</span>
+                </CommandItem>
+                <CommandItem>
+                  <BellIcon />
+                  <span>Notifications</span>
+                </CommandItem>
+                <CommandItem>
+                  <HelpCircleIcon />
+                  <span>Help & Support</span>
+                </CommandItem>
+              </CommandGroup>
+            </CommandList>
           </Command>
         </CommandDialog>
 

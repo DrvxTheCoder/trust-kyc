@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { TkBadge, TypeBadge, RiskBadge, StatusBadge } from "@/components/ui/tk-badge"
@@ -48,7 +49,8 @@ function FeedItem({ action, user, role, detail, time }: { action: string; user: 
   )
 }
 
-export function CustomerProfile({ customer, onBack }: { customer: Customer; onBack: () => void }) {
+export function CustomerProfile({ customer }: { customer: Customer }) {
+  const router = useRouter()
   const wf = getWorkflowForCustomer(customer.type)
   const stages = wf.stages
   const currentIdx = stages.findIndex((s) => s.id === customer.stage)
@@ -58,10 +60,9 @@ export function CustomerProfile({ customer, onBack }: { customer: Customer; onBa
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Back */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5 -ml-2">
-          <IconChevronLeft size={16} /> Back to pipeline
+        <Button variant="ghost" size="sm" onClick={() => router.back()} className="gap-1.5 -ml-2">
+          <IconChevronLeft size={16} /> Back
         </Button>
       </div>
 

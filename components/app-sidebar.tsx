@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Image from "next/image"
+import { usePathname, useRouter } from "next/navigation"
 import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
@@ -40,12 +41,15 @@ const adminNav = [
   { id: "team", label: "Team", icon: IconUserCheck },
 ]
 
-interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  currentRoute?: string
-  onNav?: (route: string) => void
-}
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname()
+  const router = useRouter()
 
-export function AppSidebar({ currentRoute = "dashboard", onNav, ...props }: AppSidebarProps) {
+  const isActive = (id: string) => {
+    if (id === "dashboard") return pathname === "/dashboard"
+    return pathname === `/dashboard/${id}` || pathname.startsWith(`/dashboard/${id}/`)
+  }
+
   return (
     <Sidebar collapsible="icon" {...props} className="md:pt-14">
       <SidebarHeader>
@@ -54,7 +58,7 @@ export function AppSidebar({ currentRoute = "dashboard", onNav, ...props }: AppS
             <SidebarMenuButton
               size="lg"
               className="cursor-pointer rounded-sm"
-              onClick={() => onNav?.("dashboard")}
+              onClick={() => router.push("/dashboard")}
               tooltip="TrustKYC — Dashboard"
             >
               <div className="flex aspect-square size-8 items-center justify-center rounded-sm overflow-hidden shrink-0">
@@ -76,9 +80,9 @@ export function AppSidebar({ currentRoute = "dashboard", onNav, ...props }: AppS
               {mainNav.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
-                    isActive={currentRoute === item.id}
+                    isActive={isActive(item.id)}
                     tooltip={item.label}
-                    onClick={() => onNav?.(item.id)}
+                    onClick={() => router.push(item.id === "dashboard" ? "/dashboard" : `/dashboard/${item.id}`)}
                     className="cursor-pointer"
                   >
                     <item.icon />
@@ -99,9 +103,9 @@ export function AppSidebar({ currentRoute = "dashboard", onNav, ...props }: AppS
               {adminNav.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
-                    isActive={currentRoute === item.id}
+                    isActive={isActive(item.id)}
                     tooltip={item.label}
-                    onClick={() => onNav?.(item.id)}
+                    onClick={() => router.push(`/dashboard/${item.id}`)}
                     className="cursor-pointer"
                   >
                     <item.icon />
@@ -118,9 +122,9 @@ export function AppSidebar({ currentRoute = "dashboard", onNav, ...props }: AppS
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  isActive={currentRoute === "settings"}
+                  isActive={isActive("settings")}
                   tooltip="Settings"
-                  onClick={() => onNav?.("settings")}
+                  onClick={() => router.push("/dashboard/settings")}
                   className="cursor-pointer"
                 >
                   <IconSettings />
