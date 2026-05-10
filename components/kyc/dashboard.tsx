@@ -95,10 +95,10 @@ const completionConfig = {
 } satisfies ChartConfig
 
 const completionData = [
-  { key: "approvedTime", label: "On time (%)", value: 62, color: "#10B981", fill: "var(--color-approvedTime)" },
-  { key: "approvedDelayed", label: "Delayed (%)", value: 18, color: "#F59E0B", fill: "var(--color-approvedDelayed)" },
-  { key: "inProgress", label: "In progress (%)", value: 14, color: "#3B82F6", fill: "var(--color-inProgress)" },
-  { key: "stuck", label: "Stuck (%)", value: 6, color: "#EF4444", fill: "var(--color-stuck)" },
+  { key: "approvedTime", label: "On time (%)", value: 62, color: "#93C4F0", fill: "var(--chart-1)" },
+  { key: "approvedDelayed", label: "Delayed (%)", value: 18, color: "#0070E0", fill: "var(--chart-2)" },
+  { key: "inProgress", label: "In progress (%)", value: 14, color: "#0058CC", fill: "var(--chart-3)" },
+  { key: "stuck", label: "Stuck (%)", value: 6, color: "#0044B4", fill: "var(--chart-4)" },
 ]
 
 function CompletionPanel() {
@@ -418,7 +418,7 @@ export function Dashboard() {
   return (
     <div className="flex flex-col gap-6">
       {/* Hero banner */}
-      <div className="relative rounded-2xl overflow-hidden bg-linear-to-br from-red-500 to-red-800 p-6">
+      <div className="relative rounded-2xl overflow-hidden bg-linear-to-br from-primary/70 to-primary p-6">
         <div className="flex flex-col gap-2">
           
           <div className="flex items-start justify-between">
